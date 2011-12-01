@@ -1,0 +1,12 @@
+-- Every element is a display node
+-- Calculate based on theme and parent
+
+recurse from root:
+	-- calc initial values
+	pos = root + padding + margin
+	width/height = % of parent | width/height
+	
+	-- let type of node calc the rest
+	anchor:
+		top: = 0
+		bottom = height
