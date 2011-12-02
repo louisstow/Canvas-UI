@@ -3,8 +3,6 @@
 * - Use the prototype
 * - Data binding
 * - Layout
-* 	- use w/h in expression
-*	- Get a clear box model
 */
 window.onload = function() {
 	UI.init();
@@ -51,7 +49,7 @@ window.onload = function() {
 	});
 	
 	p4 = UI.panel({
-		y: "100% - 20px",
+		y: "100% - height",
 		width: "100%",
 		height: "20px",
 		borderSize: 1

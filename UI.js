@@ -1,4 +1,6 @@
-var UI = (function(window, document, undefined) {
+(function(window, document, undefined) {
+
+var UI = (function() {
 	var canvas;
 	var ctx;
 	var tree;
@@ -39,11 +41,12 @@ var UI = (function(window, document, undefined) {
 		var children = p._children;
 		var len = children.length;
 		var child;
+		
 		for(var i = 0; i < len; ++i) {
 			child = children[i];
 
 			calculate(p, child);
-			child.draw();
+			child.draw(ctx);
 			draw(children[i]);
 		}
 	}
@@ -52,59 +55,77 @@ var UI = (function(window, document, undefined) {
 	* Evaluate an expression
 	* Must seperate with spaces and use units
 	*/
-	function expr(str, p) {
+	function expr(str, p, w, h) {
 		//if number, use that
 		if(typeof str === "number") return str;
 		var tokens = str.split(' ');
-		var x, y;
+		var a, b;
 		
 		//evaluate the first number
-		x = parseInt(tokens[0], 10);
+		a = parseInt(tokens[0], 10);
 		if(tokens[0].indexOf("%") !== -1) {
-			x = p * (x / 100);
+			a = p * (a / 100);
+		} else if(tokens[0] === "w" || tokens[0] === "width") {
+			a = w;
+		} else if(tokens[0] === "h" || tokens[0] === "height") {
+			a = h;
 		}
 		
 		//if no expression
-		if(tokens.length === 1) return x;
+		if(tokens.length === 1) return a;
 		
 		//evaluate the second number
-		y = parseInt(tokens[2], 10)
+		b = parseInt(tokens[2], 10)
 		if(tokens[2].indexOf("%") !== -1) {
-			y = p * (y / 100);
+			b = p * (b / 100);
+		} else if(tokens[2] === "w" || tokens[2] === "width") {
+			b = w;
+		} else if(tokens[2] === "h" || tokens[2] === "height") {
+			b = h;
 		}
 		
 		switch(tokens[1]) {
-			case "+": return x + y
-			case "-": return x - y;
-			case "*": return x * y;
-			case "/": return x / y;
+			case "+": return a + b
+			case "-": return a - b;
+			case "*": return a * b;
+			case "/": return a / b;
 		}
 	}
 
 	function calculate(p, c) {
 		var width, height;
+		var outerWidth, outerHeight;
 		var x, y;
 
 		//calculate width
-		width = expr(c.width, p._actual.width) - (p.padding + c.borderSize) * 2;
-		height = expr(c.height, p._actual.height) - (p.padding + c.borderSize) * 2;
-		x = expr(c.x, p._actual.width) + p.padding + c.margin + p._actual.x + c.borderSize;
-		y = expr(c.y, p._actual.height) + p.padding + c.margin + + p._actual.y + c.borderSize;
+		outerWidth = expr(c.width, p._actual.width);
+		width = outerWidth - (p.padding + c.borderSize) * 2;
+		outerHeight = expr(c.height, p._actual.height);
+		height = outerHeight - (p.padding + c.borderSize) * 2;
+		
+		x = expr(c.x, p._actual.width, outerWidth, outerHeight) + p.padding + c.margin + p._actual.x + c.borderSize;
+		y = expr(c.y, p._actual.height, outerWidth, outerHeight) + p.padding + c.margin + p._actual.y + c.borderSize;
+		
+		//no negative widths or heights
+		if(width < 0) width = 0;
+		if(height < 0) height = 0;
 
 		c._actual = {
-			x: x,
-			y: y,
-			width: width,
-			height: height
+			x: ~~x,
+			y: ~~y,
+			width: ~~width,
+			height: ~~height
 		};
 
-		c.calculate();
+		if(c.calculate) c.calculate();
 	}
 
 	/**
 	* A UI node in the display tree
 	*/
 	function node(opts) {
+		if(!opts) return;
+		
 		//copy all properties
 		for(var key in opts) {
 			this[key] = opts[key];
@@ -197,48 +218,33 @@ var UI = (function(window, document, undefined) {
 				height: canvas.height
 			};
 		},
-
-		panel: function(opts) {
-			opts.type = "panel";
-			var n = new node(opts);
-			n.draw = function(param) {
-				ctx.save();
-				
-				//only draw a border when needed
-				if(this.borderSize) {
-					ctx.fillStyle = this.borderColor;
-					ctx.fillRect(
-						this._actual.x - this.borderSize,
-						this._actual.y - this.borderSize,
-						this._actual.width + this.borderSize * 2,
-						this._actual.height + this.borderSize * 2
-					);
-				}
-                
-				ctx.fillStyle = this.backgroundColor;
-				ctx.fillRect(
-					this._actual.x,
-					this._actual.y,
-					this._actual.width,
-					this._actual.height
-				);
-
-				ctx.restore();
+		
+		/**
+		* Define a widget for the UI library
+		*/
+		e: function(name, def) {
+			var c = function(opts) {
+				opts.type = name;
+				node.call(this, opts);
 			};
-
-			n.calculate = function() {
-
-			};
-
-			return n;
+			
+			this[name] = function(opts) {
+				return new c(opts);
+			}
+			
+			c.prototype = new node;
+			c.prototype.constructor = c;
+			
+			for(var key in def) {
+				c.prototype[key] = def[key];
+			}
 		},
 
 		debug: function() {
 			console.log(tree, canvas, ctx, themes, currentTheme);
 		},
 		
-		update: function() {
-			console.log("RESIZE");
+		reflow: function() {
 			if(isFullscreen) {
 				tree.width = canvas.width = window.innerWidth;
 				tree.height = canvas.height = window.innerHeight;
@@ -247,7 +253,7 @@ var UI = (function(window, document, undefined) {
 				tree._actual.height = tree.height;
 			}
 			
-			UI.draw();
+			UI.repaint();
 		},
 		
 		fullscreen: function(q) {
@@ -259,7 +265,7 @@ var UI = (function(window, document, undefined) {
 				tree.width = canvas.width = window.innerWidth;
 				tree.height = canvas.height = window.innerHeight;
 				isFullscreen = true;
-				window.onresize = this.update;
+				window.onresize = this.reflow;
 			} else {
 				tree.width = canvas.width = originalDimensions.width;
 				tree.height = canvas.height = originalDimensions.height;
@@ -271,10 +277,44 @@ var UI = (function(window, document, undefined) {
 			tree._actual.width = tree.width;
 			tree._actual.height = tree.height;
 			
-			this.draw();
+			this.repaint();
 		},
 
-		draw: draw
+		repaint: draw
 	};
 
+})();
+//end UI def
+	
+/**
+* UI Panel Definition
+*/
+UI.e("panel", {
+	draw: function(ctx) {
+		ctx.save();
+		
+		//only draw a border when needed
+		if(this.borderSize) {
+			ctx.fillStyle = this.borderColor;
+			ctx.fillRect(
+				this._actual.x - this.borderSize,
+				this._actual.y - this.borderSize,
+				this._actual.width + this.borderSize * 2,
+				this._actual.height + this.borderSize * 2
+			);
+		}
+		
+		ctx.fillStyle = this.backgroundColor;
+		ctx.fillRect(
+			this._actual.x,
+			this._actual.y,
+			this._actual.width,
+			this._actual.height
+		);
+
+		ctx.restore();
+	}
+});
+	
+window.UI = UI;
 })(window, window.document);
