@@ -12,13 +12,17 @@ window.onload = function() {
 		width: "50%",
 		height: "100% - 20px",
 		backgroundColor: "rgb(0, 200, 0)",
-		padding: 10
+		padding: 10,
+		minHeight: 400
 	});
 	
 	p1Child = UI.panel({
 		height: "50px",
 		backgroundColor: "rgb(200, 0, 0)",
-		parent: p1
+		parent: p1,
+		text: "This is a test \nNew line?",
+		fontSize: "20px",
+		padding: "10 0 0 0"
 	});
 	
 	p2 = UI.panel({		

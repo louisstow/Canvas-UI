@@ -12,7 +12,12 @@ var UI = (function() {
 			backgroundColor: hexToRgb("#cccccc"),
 			headerColor: hexToRgb("#aaaaaa"),
 			padding: 2,
-			margin: 0
+			margin: 0,
+			fontSize: "12px",
+			fontFamily: "Arial",
+			fontColor: hexToRgb("#000000"),
+			textBaseline: "middle",
+			lineHeight: 20
 		}
 	};
 	var isFullscreen = false;
@@ -95,20 +100,30 @@ var UI = (function() {
 	function calculate(p, c) {
 		var width, height;
 		var outerWidth, outerHeight;
+		var minWidth, maxWidth, minHeight, maxHeight;
 		var x, y;
 
-		//calculate width
+		//calculate widths/heights
 		outerWidth = expr(c.width, p._actual.width);
-		width = outerWidth - (p.padding + c.borderSize) * 2;
+		width = outerWidth - (p.paddingLeft + p.paddingRight + c.borderSizeLeft + c.borderSizeRight);
 		outerHeight = expr(c.height, p._actual.height);
-		height = outerHeight - (p.padding + c.borderSize) * 2;
+		height = outerHeight - (p.paddingTop + p.paddingBottom + c.borderSizeTop + c.borderSizeBottom);
 		
-		x = expr(c.x, p._actual.width, outerWidth, outerHeight) + p.padding + c.margin + p._actual.x + c.borderSize;
-		y = expr(c.y, p._actual.height, outerWidth, outerHeight) + p.padding + c.margin + p._actual.y + c.borderSize;
+		//calculate the min/max width/heights
+		if(c.minWidth !== undefined) minWidth = expr(c.minWidth, p._actual.width);
+		if(c.minHeight !== undefined) minHeight = expr(c.minHeight, p._actual.height);
+		if(c.maxWidth !== undefined) maxWidth = expr(c.maxWidth, p._actual.width);
+		if(c.maxHeight !== undefined) maxHeight = expr(c.maxHeight, p._actual.height);
 		
-		//no negative widths or heights
-		if(width < 0) width = 0;
-		if(height < 0) height = 0;
+		//calculate the position
+		x = expr(c.x, p._actual.width, outerWidth, outerHeight) + p.paddingLeft + c.marginLeft + p._actual.x + c.borderSizeLeft;
+		y = expr(c.y, p._actual.height, outerWidth, outerHeight) + p.paddingTop + c.marginTop + p._actual.y + c.borderSizeTop;
+		
+		//make sure size within min and max
+		if(width < minWidth || 0) width = minWidth || 0;
+		if(height < minHeight || 0) height = minHeight || 0;
+		if(maxWidth && width > maxWidth) width = maxWidth;
+		if(maxHeight && height > maxHeight) height = maxHeight;
 
 		c._actual = {
 			x: ~~x,
@@ -118,6 +133,44 @@ var UI = (function() {
 		};
 
 		if(c.calculate) c.calculate();
+	}
+	
+	/**
+	* Determine the actualy property values
+	* from CSS style syntax
+	* e.g. margin: 0 0 0 5; padding: 5; border-width: 5 10
+	*/
+	function parseProperty(node, prop) {
+		var p = node[prop];
+		if(p === undefined) return;
+		
+		var top, right, bottom, left;
+		var tokens;
+		
+		//set all sides to same value
+		if(typeof p === "number") {
+			top = right = bottom = left = p;
+		} else if(typeof p === "string") {
+			//evaluate values seperated by spaces
+			tokens = p.split(/\s+/);
+			if(tokens.length === 1) {
+				top = right = bottom = left = parseInt(tokens[0], 10);
+			} else if(tokens.length === 2) {
+				top = bottom = parseInt(tokens[0], 10);
+				left = right = parseInt(tokens[1], 10);
+			} else if(tokens.length === 4) {
+				top = parseInt(tokens[0], 10);
+				right = parseInt(tokens[1], 10);
+				bottom = parseInt(tokens[2], 10);
+				left = parseInt(tokens[3], 10);
+			} else throw "Too many values in " + prop;
+		
+		} else throw "Incorrect value for " + prop + ": " + p.toString();
+		
+		node[prop + "Top"] = top;
+		node[prop + "Right"] = right;
+		node[prop + "Bottom"] = bottom;
+		node[prop + "Left"] = left;
 	}
 
 	/**
@@ -130,7 +183,7 @@ var UI = (function() {
 		for(var key in opts) {
 			this[key] = opts[key];
 		}
-
+		
 		if(!this.width) this.width = "100%";
 		if(!this.height) this.height = "100%";
 		if(!this.x) this.x = 0;
@@ -154,6 +207,10 @@ var UI = (function() {
 			if(this[key] === undefined)
 				this[key] = theme[key];
 		}
+		
+		parseProperty(this, "padding");
+		parseProperty(this, "margin");
+		parseProperty(this, "borderSize");
 
 		//array of child nodes
 		this._children = [];
@@ -311,10 +368,31 @@ UI.e("panel", {
 			this._actual.width,
 			this._actual.height
 		);
+		
+		if(this.text) {
+			var lines = this.text.split("\n");
+			var len = lines.length;
+			var line;
+			
+			ctx.font = this.fontSize + " " + this.fontFamily;
+			ctx.fillStyle = this.fontColor;
+			ctx.textBaseline = this.textBaseline;
+			
+			for(var i = 0; i < len; ++i) {
+				
+				ctx.fillText(
+					lines[i],
+					this._actual.x + this.paddingLeft + this.borderSizeLeft,
+					(this._actual.y + this.paddingTop + this.borderSizeTop) + i * this.lineHeight
+				);
+			}
+		}
 
 		ctx.restore();
 	}
 });
+
+
 	
 window.UI = UI;
 })(window, window.document);
