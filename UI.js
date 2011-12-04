@@ -9,6 +9,7 @@ var UI = (function() {
 		"default": {
 			borderColor: hexToRgb("#000000"),
 			borderSize: 4,
+			borderRadius: 0,
 			backgroundColor: hexToRgb("#cccccc"),
 			headerColor: hexToRgb("#aaaaaa"),
 			padding: 2,
@@ -16,12 +17,15 @@ var UI = (function() {
 			fontSize: "12px",
 			fontFamily: "Arial",
 			fontColor: hexToRgb("#000000"),
-			textBaseline: "middle",
+			textBaseline: "top",
 			lineHeight: 20
 		}
 	};
+	
 	var isFullscreen = false;
 	var originalDimensions;
+	
+	
 
 	function hexToRgb(str) {
 		if(str.charAt(0) === "#") {
@@ -120,8 +124,8 @@ var UI = (function() {
 		y = expr(c.y, p._actual.height, outerWidth, outerHeight) + p.paddingTop + c.marginTop + p._actual.y + c.borderSizeTop;
 		
 		//make sure size within min and max
-		if(width < minWidth || 0) width = minWidth || 0;
-		if(height < minHeight || 0) height = minHeight || 0;
+		if(width < (minWidth || 0)) width = minWidth || 0;
+		if(height < (minHeight || 0)) height = minHeight || 0;
 		if(maxWidth && width > maxWidth) width = maxWidth;
 		if(maxHeight && height > maxHeight) height = maxHeight;
 
@@ -211,6 +215,7 @@ var UI = (function() {
 		parseProperty(this, "padding");
 		parseProperty(this, "margin");
 		parseProperty(this, "borderSize");
+		parseProperty(this, "borderRadius");
 
 		//array of child nodes
 		this._children = [];
@@ -242,6 +247,27 @@ var UI = (function() {
 					return;
 				}
 			}
+		},
+		
+		roundRect: function(ctx, x, y, width, height, radiusTop, radiusRight, radiusBottom, radiusLeft, fill) {
+			ctx.beginPath();
+			
+			ctx.moveTo(x + radiusTop, y);
+			ctx.lineTo(x + width - radiusRight, y);
+			ctx.quadraticCurveTo(x + width, y, x + width , y + radiusRight);
+			
+			ctx.lineTo(x + width , y + height - radiusBottom);
+			ctx.quadraticCurveTo(x + width, y + height, x + width - radiusBottom, y + height);
+			
+			ctx.lineTo(x + radiusLeft, y + height);
+			ctx.quadraticCurveTo(x, y + height, x, y + height - radiusLeft);
+			
+			ctx.lineTo(x, y + radiusTop);
+			ctx.quadraticCurveTo(x, y, x + radiusTop, y);
+			ctx.closePath();
+			
+			ctx.fillStyle = fill;
+			ctx.fill();
 		}
 	};
 
@@ -352,22 +378,36 @@ UI.e("panel", {
 		
 		//only draw a border when needed
 		if(this.borderSize) {
-			ctx.fillStyle = this.borderColor;
-			ctx.fillRect(
-				this._actual.x - this.borderSize,
-				this._actual.y - this.borderSize,
-				this._actual.width + this.borderSize * 2,
-				this._actual.height + this.borderSize * 2
+			this.roundRect(
+				ctx,
+				this._actual.x - this.borderSizeLeft,
+				this._actual.y - this.borderSizeTop,
+				this._actual.width + this.borderSizeRight + this.borderSizeLeft,
+				this._actual.height + this.borderSizeBottom + this.borderSizeTop,
+				//short circuit logic to only add the size if the radius is > 0
+				this.borderRadiusTop && this.borderRadiusTop + this.borderSizeTop,
+				this.borderRadiusRight && this.borderRadiusRight + this.borderSizeRight,
+				this.borderRadiusBottom && this.borderRadiusBottom + this.borderSizeBottom,
+				this.borderRadiusLeft && this.borderRadiusLeft + this.borderSizeLeft,
+				this.borderColor
 			);
 		}
 		
-		ctx.fillStyle = this.backgroundColor;
-		ctx.fillRect(
+		//main rect
+		this.roundRect(
+			ctx,
 			this._actual.x,
 			this._actual.y,
 			this._actual.width,
-			this._actual.height
+			this._actual.height,
+			this.borderRadiusTop,
+			this.borderRadiusRight,
+			this.borderRadiusBottom,
+			this.borderRadiusLeft,
+			this.backgroundColor
 		);
+		
+		ctx.stroke();
 		
 		if(this.text) {
 			var lines = this.text.split("\n");

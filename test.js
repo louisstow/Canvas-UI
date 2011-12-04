@@ -13,16 +13,18 @@ window.onload = function() {
 		height: "100% - 20px",
 		backgroundColor: "rgb(0, 200, 0)",
 		padding: 10,
-		minHeight: 400
+		minHeight: 400,
+		borderRadius: 10
 	});
 	
 	p1Child = UI.panel({
-		height: "50px",
+		height: "90px",
 		backgroundColor: "rgb(200, 0, 0)",
+		borderSize: 1,
 		parent: p1,
-		text: "This is a test \nNew line?",
+		text: "This is a test \n\nNew line?",
 		fontSize: "20px",
-		padding: "10 0 0 0"
+		padding: "0 5 5 5"
 	});
 	
 	p2 = UI.panel({		
@@ -49,7 +51,7 @@ window.onload = function() {
 		height: "50% - 28px",
 		y: "50% + 8px",
 		backgroundColor: "rgb(150, 250, 250)",
-		borderSize: 0
+		borderSize: 1
 	});
 	
 	p4 = UI.panel({
