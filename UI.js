@@ -10,7 +10,7 @@ var UI = (function() {
 			borderColor: hexToRgb("#000000"),
 			borderSize: 0,
 			borderRadius: 0,
-			backgroundColor: "#ffffff",
+			backgroundColor: "transparent",
 			headerColor: hexToRgb("#aaaaaa"),
 			padding: 0,
 			margin: 0,
@@ -271,8 +271,9 @@ var UI = (function() {
         draw: function(ctx) {
             ctx.save();
             
+                console.log(this.borderSizeLeft, this.borderSizeTop, this.borderSizeRight, this.borderSizeBottom, this.type);
             //only draw a border when needed
-            if(this.borderSize) {
+            if(this.borderSizeLeft || this.borderSizeTop || this.borderSizeRight || this.borderSizeBottom) {
                 this.roundRect(
                     ctx,
                     this._actual.x - this.borderSizeLeft,
@@ -288,21 +289,21 @@ var UI = (function() {
                 );
             }
             
-            //main rect
-            this.roundRect(
-                ctx,
-                this._actual.x,
-                this._actual.y,
-                this._actual.width,
-                this._actual.height,
-                this.borderRadiusTop,
-                this.borderRadiusRight,
-                this.borderRadiusBottom,
-                this.borderRadiusLeft,
-                this.backgroundColor
-            );
-            
-            ctx.stroke();
+            if(this.backgroundColor !== "transparent") {
+                //main rect
+                this.roundRect(
+                    ctx,
+                    this._actual.x,
+                    this._actual.y,
+                    this._actual.width,
+                    this._actual.height,
+                    this.borderRadiusTop,
+                    this.borderRadiusRight,
+                    this.borderRadiusBottom,
+                    this.borderRadiusLeft,
+                    this.backgroundColor
+                );
+            }
             
             if(this.text) {
                 var lines = this.text.split("\n");

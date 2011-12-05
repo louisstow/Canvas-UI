@@ -2,7 +2,6 @@
 * TODO:
 * - Use the prototype
 * - Data binding
-* - Layout
 */
 window.onload = function() {
 	UI.init();
@@ -63,7 +62,9 @@ window.onload = function() {
 
     img = UI.image({
         src: "github.png",
-        parent: p35
+        parent: p35,
+        x: "50% - 16px",
+        y: "50% - 16px"
     });
 
 	//this will be automatic soon
