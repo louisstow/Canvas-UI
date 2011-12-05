@@ -8,11 +8,11 @@ var UI = (function() {
 	var themes = {
 		"default": {
 			borderColor: hexToRgb("#000000"),
-			borderSize: 4,
+			borderSize: 0,
 			borderRadius: 0,
-			backgroundColor: hexToRgb("#cccccc"),
+			backgroundColor: "#ffffff",
 			headerColor: hexToRgb("#aaaaaa"),
-			padding: 2,
+			padding: 0,
 			margin: 0,
 			fontSize: "12px",
 			fontFamily: "Arial",
@@ -442,11 +442,29 @@ UI.e("image", {
 
     init: function(opts) {
         console.log("Image", opts);
+        this._src = new Image();
+        this._src.src = opts.src;
+
+        this._src.onload = function() {
+            UI.repaint();
+        }
+    },
+
+    calculate: function() {
+        if(!this._src.complete) return;
+        this.width = this._src.width;
+        this.height = this._src.height;
     },
 
     draw: function(ctx) {
        this.supr.draw.call(this, ctx);
-       
+       if(this._src.complete === false) return;
+
+       ctx.drawImage(
+            this._src,
+            this._actual.x,
+            this._actual.y
+       );
     }
 });
 	

@@ -61,6 +61,11 @@ window.onload = function() {
 		borderSize: 1
 	});
 
+    img = UI.image({
+        src: "github.png",
+        parent: p35
+    });
+
 	//this will be automatic soon
 	UI.fullscreen();
 }
