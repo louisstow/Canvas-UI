@@ -24,8 +24,6 @@ var UI = (function() {
 	
 	var isFullscreen = false;
 	var originalDimensions;
-	
-	
 
 	function hexToRgb(str) {
 		if(str.charAt(0) === "#") {
@@ -367,15 +365,16 @@ var UI = (function() {
 			var c = function(opts) {
 				opts.type = name;
 				node.call(this, opts);
+                if(this.init) this.init(opts);
 			};
-			
-			this[name] = function(opts) {
-				return new c(opts);
-			}
-			
+
 			c.prototype = new node;
 			c.prototype.constructor = c;
             c.prototype.supr = node.prototype;
+
+			this[name] = function(opts) {
+				return new c(opts);
+			}
 			
 			for(var key in def) {
 				c.prototype[key] = def[key];
@@ -438,7 +437,18 @@ UI.e("panel", {
 	}
 });
 
+UI.e("image", {
+    _src: null,
 
+    init: function(opts) {
+        console.log("Image", opts);
+    },
+
+    draw: function(ctx) {
+       this.supr.draw.call(this, ctx);
+       
+    }
+});
 	
 window.UI = UI;
 })(window, window.document);
