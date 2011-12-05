@@ -268,7 +268,65 @@ var UI = (function() {
 			
 			ctx.fillStyle = fill;
 			ctx.fill();
-		}
+		},
+
+        draw: function(ctx) {
+            ctx.save();
+            
+            //only draw a border when needed
+            if(this.borderSize) {
+                this.roundRect(
+                    ctx,
+                    this._actual.x - this.borderSizeLeft,
+                    this._actual.y - this.borderSizeTop,
+                    this._actual.width + this.borderSizeRight + this.borderSizeLeft,
+                    this._actual.height + this.borderSizeBottom + this.borderSizeTop,
+                    //short circuit logic to only add the size if the radius is > 0
+                    this.borderRadiusTop && this.borderRadiusTop + this.borderSizeTop,
+                    this.borderRadiusRight && this.borderRadiusRight + this.borderSizeRight,
+                    this.borderRadiusBottom && this.borderRadiusBottom + this.borderSizeBottom,
+                    this.borderRadiusLeft && this.borderRadiusLeft + this.borderSizeLeft,
+                    this.borderColor
+                );
+            }
+            
+            //main rect
+            this.roundRect(
+                ctx,
+                this._actual.x,
+                this._actual.y,
+                this._actual.width,
+                this._actual.height,
+                this.borderRadiusTop,
+                this.borderRadiusRight,
+                this.borderRadiusBottom,
+                this.borderRadiusLeft,
+                this.backgroundColor
+            );
+            
+            ctx.stroke();
+            
+            if(this.text) {
+                var lines = this.text.split("\n");
+                var len = lines.length;
+                var line;
+                
+                ctx.font = this.fontSize + " " + this.fontFamily;
+                ctx.fillStyle = this.fontColor;
+                ctx.textBaseline = this.textBaseline;
+                
+                for(var i = 0; i < len; ++i) {
+                    
+                    ctx.fillText(
+                        lines[i],
+                        this._actual.x + this.paddingLeft + this.borderSizeLeft,
+                        (this._actual.y + this.paddingTop + this.borderSizeTop) + i * this.lineHeight
+                    );
+                }
+            }
+
+            ctx.restore();
+        }
 	};
 
 	return {
@@ -317,6 +375,7 @@ var UI = (function() {
 			
 			c.prototype = new node;
 			c.prototype.constructor = c;
+            c.prototype.supr = node.prototype;
 			
 			for(var key in def) {
 				c.prototype[key] = def[key];
@@ -374,61 +433,8 @@ var UI = (function() {
 */
 UI.e("panel", {
 	draw: function(ctx) {
-		ctx.save();
-		
-		//only draw a border when needed
-		if(this.borderSize) {
-			this.roundRect(
-				ctx,
-				this._actual.x - this.borderSizeLeft,
-				this._actual.y - this.borderSizeTop,
-				this._actual.width + this.borderSizeRight + this.borderSizeLeft,
-				this._actual.height + this.borderSizeBottom + this.borderSizeTop,
-				//short circuit logic to only add the size if the radius is > 0
-				this.borderRadiusTop && this.borderRadiusTop + this.borderSizeTop,
-				this.borderRadiusRight && this.borderRadiusRight + this.borderSizeRight,
-				this.borderRadiusBottom && this.borderRadiusBottom + this.borderSizeBottom,
-				this.borderRadiusLeft && this.borderRadiusLeft + this.borderSizeLeft,
-				this.borderColor
-			);
-		}
-		
-		//main rect
-		this.roundRect(
-			ctx,
-			this._actual.x,
-			this._actual.y,
-			this._actual.width,
-			this._actual.height,
-			this.borderRadiusTop,
-			this.borderRadiusRight,
-			this.borderRadiusBottom,
-			this.borderRadiusLeft,
-			this.backgroundColor
-		);
-		
-		ctx.stroke();
-		
-		if(this.text) {
-			var lines = this.text.split("\n");
-			var len = lines.length;
-			var line;
-			
-			ctx.font = this.fontSize + " " + this.fontFamily;
-			ctx.fillStyle = this.fontColor;
-			ctx.textBaseline = this.textBaseline;
-			
-			for(var i = 0; i < len; ++i) {
-				
-				ctx.fillText(
-					lines[i],
-					this._actual.x + this.paddingLeft + this.borderSizeLeft,
-					(this._actual.y + this.paddingTop + this.borderSizeTop) + i * this.lineHeight
-				);
-			}
-		}
-
-		ctx.restore();
+        //call parent
+		this.supr.draw.call(this, ctx);
 	}
 });
 
