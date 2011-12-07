@@ -6,6 +6,13 @@
 window.onload = function() {
 	UI.init();
 	
+	UI.createTheme("main", {
+		padding: 2,
+		margin: 2
+	});
+	
+	UI.setTheme("main");
+	
 	p1 = UI.panel({
 		x: "50%",
 		width: "50%",

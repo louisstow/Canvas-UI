@@ -107,9 +107,9 @@ var UI = (function() {
 
 		//calculate widths/heights
 		outerWidth = expr(c.width, p._actual.width);
-		width = outerWidth - (p.paddingLeft + p.paddingRight + c.borderSizeLeft + c.borderSizeRight);
+		width = outerWidth - (p.paddingLeft + p.paddingRight + c.borderSizeLeft + c.borderSizeRight + c.marginLeft + c.marginRight);
 		outerHeight = expr(c.height, p._actual.height);
-		height = outerHeight - (p.paddingTop + p.paddingBottom + c.borderSizeTop + c.borderSizeBottom);
+		height = outerHeight - (p.paddingTop + p.paddingBottom + c.borderSizeTop + c.borderSizeBottom + c.marginTop + c.marginBottom);
 		
 		//calculate the min/max width/heights
 		if(c.minWidth !== undefined) minWidth = expr(c.minWidth, p._actual.width);
@@ -200,11 +200,12 @@ var UI = (function() {
 				width: this.width,
 				height: this.height
 			};
-		
 		}
 
 		//copy the theme properties
+		
 		var theme = themes[opts.theme || currentTheme];
+		console.log(opts.theme, currentTheme, opts, theme, this);
 		for(var key in theme) {
 			if(this[key] === undefined)
 				this[key] = theme[key];
@@ -271,7 +272,6 @@ var UI = (function() {
         draw: function(ctx) {
             ctx.save();
             
-                console.log(this.borderSizeLeft, this.borderSizeTop, this.borderSizeRight, this.borderSizeBottom, this.type);
             //only draw a border when needed
             if(this.borderSizeLeft || this.borderSizeTop || this.borderSizeRight || this.borderSizeBottom) {
                 this.roundRect(
@@ -384,6 +384,33 @@ var UI = (function() {
 
 		debug: function() {
 			console.log(tree, canvas, ctx, themes, currentTheme);
+		},
+		
+		createTheme: function(name, parent, def) {
+			if(arguments.length === 2) {
+				def = parent;
+				parent = "default";
+			}
+			
+			//get the theme object
+			parent = themes[parent];
+			var theme = {};
+			
+			//copy properties from parent
+			for(var key in parent) {
+				theme[key] = parent[key];
+			}
+			
+			//copy properties from definition
+			for(var key in def) {
+				theme[key] = def[key];
+			}
+			
+			themes[name] = theme;
+		},
+		
+		setTheme: function(theme) {
+			currentTheme = theme;
 		},
 		
 		reflow: function() {
